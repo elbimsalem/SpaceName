@@ -12,8 +12,8 @@ final class OverlayController {
         self.settings = settings
     }
 
-    private func card(_ text: String, fontSize: CGFloat, padding: CGFloat) -> NSView {
-        let host = NSHostingView(rootView: OverlayCardView(text: text, fontSize: fontSize, padding: padding))
+    private func card(_ text: String, fontSize: CGFloat) -> NSView {
+        let host = NSHostingView(rootView: OverlayCard(text: text, fontSize: fontSize))
         host.layout()
         host.frame = NSRect(origin: .zero, size: host.fittingSize)
         return host
@@ -23,7 +23,7 @@ final class OverlayController {
 
     func flashHUD(_ name: String) {
         guard settings.switchHUDEnabled else { return }
-        let view = card(name, fontSize: 34, padding: 28)
+        let view = card(name, fontSize: CGFloat(settings.hudFontSize))
         hudPanel.setContentSize(view.fittingSize)
         hudPanel.contentView = view
         centerOnActiveScreen(hudPanel)
@@ -51,7 +51,7 @@ final class OverlayController {
             labelPanel.orderOut(nil)
             return
         }
-        let view = card(name, fontSize: 13, padding: 10)
+        let view = card(name, fontSize: CGFloat(settings.labelFontSize))
         labelPanel.setContentSize(view.fittingSize)
         labelPanel.contentView = view
         positionInCorner(labelPanel, corner: settings.overlayCorner)
@@ -79,20 +79,5 @@ final class OverlayController {
         let x: CGFloat = (corner == .topLeft || corner == .bottomLeft) ? v.minX + m : v.maxX - s.width - m
         let y: CGFloat = (corner == .topLeft || corner == .topRight) ? v.maxY - s.height - m : v.minY + m
         panel.setFrameOrigin(NSPoint(x: x, y: y))
-    }
-}
-
-private struct OverlayCardView: View {
-    let text: String
-    let fontSize: CGFloat
-    let padding: CGFloat
-    var body: some View {
-        Text(text)
-            .font(.system(size: fontSize, weight: .semibold, design: .rounded))
-            .foregroundStyle(.white)
-            .padding(.horizontal, padding)
-            .padding(.vertical, padding * 0.6)
-            .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .fixedSize()
     }
 }
