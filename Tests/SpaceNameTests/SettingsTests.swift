@@ -33,4 +33,29 @@ final class SettingsTests: XCTestCase {
         s.menuBarNameEnabled = true
         XCTAssertEqual(fired, 1)
     }
+
+    func test_sizeDefaults() {
+        let s = Settings(defaults: freshDefaults())
+        XCTAssertEqual(s.labelFontSize, 13.0)
+        XCTAssertEqual(s.hudFontSize, 34.0)
+    }
+
+    func test_sizesPersist() {
+        let d = freshDefaults()
+        let s = Settings(defaults: d)
+        s.labelFontSize = 22
+        s.hudFontSize = 50
+        let reloaded = Settings(defaults: d)
+        XCTAssertEqual(reloaded.labelFontSize, 22)
+        XCTAssertEqual(reloaded.hudFontSize, 50)
+    }
+
+    func test_sizeChangeFiresOnChange() {
+        let s = Settings(defaults: freshDefaults())
+        var fired = 0
+        s.onChange = { fired += 1 }
+        s.labelFontSize = 20
+        s.hudFontSize = 40
+        XCTAssertEqual(fired, 2)
+    }
 }
