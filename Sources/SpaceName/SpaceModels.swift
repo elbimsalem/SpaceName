@@ -14,7 +14,9 @@ struct DisplaySpaces: Equatable {
 }
 
 /// Abstraction over the (private-API) source of Space data so the app and tests
-/// never touch CGS directly.
+/// never touch CGS directly. Main-actor isolated because the concrete provider
+/// reads window-server state and all consumers are main-actor UI.
+@MainActor
 protocol SpacesProviding {
     func currentSnapshot() -> [DisplaySpaces]
 }
