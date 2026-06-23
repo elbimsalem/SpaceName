@@ -1,25 +1,47 @@
 import SwiftUI
 import AppKit
 
+enum WindowTab: Hashable { case spaceNames, appearance }
+
+@MainActor
+final class WindowTabSelection: ObservableObject {
+    @Published var tab: WindowTab = .spaceNames
+}
+
 @MainActor
 final class MainWindowController {
     private var window: NSWindow?
     private let viewModel: SpacesViewModel
+    private let settings: Settings
+    private let isLoginEnabled: () -> Bool
+    private let setLoginEnabled: (Bool) -> Void
+    private let selection = WindowTabSelection()
 
-    init(viewModel: SpacesViewModel) { self.viewModel = viewModel }
+    init(viewModel: SpacesViewModel,
+         settings: Settings,
+         isLoginEnabled: @escaping () -> Bool,
+         setLoginEnabled: @escaping (Bool) -> Void) {
+        self.viewModel = viewModel
+        self.settings = settings
+        self.isLoginEnabled = isLoginEnabled
+        self.setLoginEnabled = setLoginEnabled
+    }
 
-    func show() {
+    func show(tab: WindowTab = .spaceNames) {
         viewModel.reload()
+        selection.tab = tab
         if let window {
             NSApp.activate(ignoringOtherApps: true)
             window.makeKeyAndOrderFront(nil)
             return
         }
-        let hosting = NSHostingController(rootView: MainView(viewModel: viewModel))
+        let root = MainView(viewModel: viewModel, settings: settings, selection: selection,
+                            isLoginEnabled: isLoginEnabled, setLoginEnabled: setLoginEnabled)
+        let hosting = NSHostingController(rootView: root)
         let w = NSWindow(contentViewController: hosting)
         w.title = "SpaceName"
         w.styleMask = [.titled, .closable, .miniaturizable]
-        w.setContentSize(NSSize(width: 380, height: 460))
+        w.setContentSize(NSSize(width: 420, height: 520))
         w.isReleasedWhenClosed = false
         w.center()
         window = w
@@ -29,6 +51,30 @@ final class MainWindowController {
 }
 
 private struct MainView: View {
+    @ObservedObject var viewModel: SpacesViewModel
+    @ObservedObject var settings: Settings
+    @ObservedObject var selection: WindowTabSelection
+    let isLoginEnabled: () -> Bool
+    let setLoginEnabled: (Bool) -> Void
+
+    var body: some View {
+        TabView(selection: $selection.tab) {
+            SpaceNamesView(viewModel: viewModel)
+                .tabItem { Label("Space Names", systemImage: "rectangle.3.group") }
+                .tag(WindowTab.spaceNames)
+
+            AppearanceView(settings: settings,
+                           isLoginEnabled: isLoginEnabled,
+                           setLoginEnabled: setLoginEnabled)
+                .tabItem { Label("Appearance", systemImage: "paintpalette") }
+                .tag(WindowTab.appearance)
+        }
+        .frame(minWidth: 400, minHeight: 480)
+        .padding(.top, 4)
+    }
+}
+
+private struct SpaceNamesView: View {
     @ObservedObject var viewModel: SpacesViewModel
 
     var body: some View {
@@ -49,10 +95,7 @@ private struct MainView: View {
                 }
             }
         }
-        .frame(minWidth: 360, minHeight: 420)
-        .toolbar {
-            Button { viewModel.reload() } label: { Image(systemName: "arrow.clockwise") }
-        }
+        .toolbar { Button { viewModel.reload() } label: { Image(systemName: "arrow.clockwise") } }
     }
 
     private func displayTitle(_ d: DisplaySpaces) -> String {
@@ -72,6 +115,7 @@ private struct SpaceRow: View {
                 .frame(width: 24, alignment: .leading)
             TextField("Desktop \(space.desktopNumber)", text: $text)
                 .textFieldStyle(.roundedBorder)
+                .onChange(of: text) { _, newValue in viewModel.rename(space, to: newValue) }
                 .onSubmit { viewModel.rename(space, to: text) }
             if space.isCurrent {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
