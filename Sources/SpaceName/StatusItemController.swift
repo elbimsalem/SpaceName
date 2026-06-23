@@ -5,11 +5,16 @@ final class StatusItemController {
     private let statusItem: NSStatusItem
     private let settings: Settings
     private let onOpen: () -> Void
+    private let onOpenSettings: () -> Void
     private let onUninstall: () -> Void
 
-    init(settings: Settings, onOpen: @escaping () -> Void, onUninstall: @escaping () -> Void) {
+    init(settings: Settings,
+         onOpen: @escaping () -> Void,
+         onOpenSettings: @escaping () -> Void,
+         onUninstall: @escaping () -> Void) {
         self.settings = settings
         self.onOpen = onOpen
+        self.onOpenSettings = onOpenSettings
         self.onUninstall = onUninstall
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
@@ -31,6 +36,7 @@ final class StatusItemController {
     func rebuildMenu() {
         let menu = NSMenu()
         menu.addItem(item("Open SpaceName…", #selector(open)))
+        menu.addItem(item("Settings…", #selector(openSettings)))
         menu.addItem(.separator())
         menu.addItem(toggle("Show overlay on switch", settings.switchHUDEnabled, #selector(toggleHUD)))
         menu.addItem(toggle("Persistent overlay label", settings.persistentLabelEnabled, #selector(togglePersistent)))
@@ -53,6 +59,7 @@ final class StatusItemController {
     }
 
     @objc private func open() { onOpen() }
+    @objc private func openSettings() { onOpenSettings() }
     @objc private func uninstall() { onUninstall() }
     @objc private func quit() { NSApp.terminate(nil) }
 

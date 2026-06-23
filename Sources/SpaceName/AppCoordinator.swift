@@ -20,18 +20,35 @@ final class AppCoordinator: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        windowController = MainWindowController(
+            viewModel: viewModel,
+            settings: settings,
+            isLoginEnabled: { LoginItem.isEnabled },
+            setLoginEnabled: { [weak self] on in self?.setLoginEnabled(on) })
+
         statusController = StatusItemController(
             settings: settings,
-            onOpen: { [weak self] in self?.windowController.show() },
+            onOpen: { [weak self] in self?.windowController.show(tab: .spaceNames) },
+            onOpenSettings: { [weak self] in self?.windowController.show(tab: .appearance) },
             onUninstall: { Uninstaller.run() })
-        windowController = MainWindowController(viewModel: viewModel)
 
-        settings.onChange = { [weak self] in self?.applyCurrentState() }
+        settings.onChange = { [weak self] in
+            self?.applyCurrentState()
+            self?.statusController.rebuildMenu()
+        }
         viewModel.onRename = { [weak self] in self?.applyCurrentState() }
         monitor.onChange = { [weak self] _ in self?.handleSpaceChange() }
         monitor.start()
 
         applyCurrentState(flashHUD: false)
+    }
+
+    private func setLoginEnabled(_ on: Bool) {
+        do { try LoginItem.setEnabled(on) }
+        catch {
+            let a = NSAlert(error: error); a.messageText = "Couldn't change the login item."; a.runModal()
+        }
+        statusController.rebuildMenu()
     }
 
     private func handleSpaceChange() {
