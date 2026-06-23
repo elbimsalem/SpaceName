@@ -14,6 +14,9 @@ enum Uninstaller {
 
         try? LoginItem.setEnabled(false)
         try? FileManager.default.removeItem(at: SpaceStore.defaultDirectory())
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+        }
 
         NSWorkspace.shared.recycle([Bundle.main.bundleURL]) { _, error in
             DispatchQueue.main.async {

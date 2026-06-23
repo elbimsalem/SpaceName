@@ -22,6 +22,12 @@ once (it's ad-hoc signed, not notarized) to get past Gatekeeper.
   Run-at-Login from the menu.
 - **Uninstall…** removes the app, your saved names, and the login item.
 
+## Known limitations
+
+- **Multi-display:** the naming window lists Desktops across *all* displays, but
+  the switch HUD, persistent label, and menu-bar name currently target the
+  primary display only. Full per-display overlays are a planned follow-up.
+
 ## Notes
 
 SpaceName uses private CoreGraphics APIs to read Spaces (the only way macOS
